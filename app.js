@@ -1,5 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import os from 'os';
+import cluster from 'cluster';
 
 const app = express();
 app.use(bodyParser.json());
@@ -56,6 +58,26 @@ app.delete('/items/:id', (req, res) => {
 })
 
 const port = 3000;
-app.listen(port, () => {
-    console.log(`API server listening on port ${port}`);
-});
+
+// check if current prcosess is the primaryc process
+if (cluster.isPrimary) {
+    const numCPUs = os.cpus().length;
+    console.log(`Master process (${process.pid}) is running`);
+
+    // fork worker processes for each CPU core
+    for (let i = 0; i < numCPUs; i++) {
+        cluster.fork();
+    };
+
+    // handle worker process exit events
+    cluster.on('exit', (worker) => {
+        console.log(`Worker process ${worker.process.pid} died. Restarting...`);
+        cluster.fork();
+    });
+} else {
+    // start the express server on worker processes
+    app.listen(port, () => {
+        console.log(`API server listening on port ${port} (Worker process ${process.pid})`);
+    });
+};
+
