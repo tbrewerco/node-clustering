@@ -59,7 +59,7 @@ app.delete('/items/:id', (req, res) => {
 
 const port = 3000;
 
-// check if current prcosess is the primaryc process
+// check if current process is the primary process
 if (cluster.isPrimary) {
     const numCPUs = os.cpus().length;
     console.log(`Master process (${process.pid}) is running`);
